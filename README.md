@@ -141,7 +141,63 @@ Use the `virt-install` command in the "Why SATA + no TPM" section above.
 `--os-variant win2k25` (via `osinfo-db`) makes `virt-install` pick a
 UEFI-capable OVMF firmware descriptor and `q35` machine type automatically.
 
-## 4. Two real bugs you may hit building your own answer file
+## 4. Start the VM and connect to it
+
+`virt-install ... --noautoconsole` above only *creates and starts* the VM
+without opening a display — you still need to connect separately to see
+anything. `--graphics spice --video qxl` means any SPICE-capable viewer
+works, the same as on any other libvirt VM.
+
+Start (or restart) it:
+
+```sh
+virsh --connect qemu:///system start win-srv-2025
+```
+
+Check its state at any time:
+
+```sh
+virsh --connect qemu:///system list --all
+```
+
+Get a GUI, either way:
+
+- **`virt-manager`** — the VM shows up under the `QEMU/KVM` connection
+  (`qemu:///system`); double-click it to open the display.
+- **`virt-viewer`** from a terminal:
+  ```sh
+  virt-viewer --connect qemu:///system win-srv-2025
+  ```
+
+You'll land on the Windows login screen. Log in with the local administrator
+account you set in `autounattend.xml` before building the ISO (username
+`admin` by default — see the `UserAccounts` section of the XML for the exact
+name, and whatever password you replaced the placeholder with).
+
+**Always shut down with `virsh shutdown`, not `virsh destroy`.** `destroy` is
+a hard power-off and can leave the NTFS filesystem "unclean," which blocks a
+later offline `guestfish` edit (like the guest-agent fix below) until Windows
+has booted once more and shut down cleanly.
+
+```sh
+virsh --connect qemu:///system shutdown win-srv-2025
+```
+
+Once the guest agent (below) is working, a few more things become available
+without needing the GUI at all:
+
+```sh
+# confirm the agent is alive
+virsh --connect qemu:///system qemu-agent-command win-srv-2025 '{"execute":"guest-ping"}'
+
+# get the guest's IP reliably (works even without a DHCP lease visible to the host)
+virsh --connect qemu:///system domifaddr win-srv-2025 --source agent
+
+# clean guest-initiated shutdown instead of an ACPI request
+virsh --connect qemu:///system shutdown win-srv-2025 --mode agent
+```
+
+## 5. Two real bugs you may hit building your own answer file
 
 These were found the hard way while developing this repo, confirmed by
 booting into a WinPE command prompt mid-install (`Shift+F10` during Setup,
@@ -167,7 +223,7 @@ then `dir E:\`, `dir C:\`, etc.) to inspect what Setup actually saw:
    visible `C:\` drive. Always use the full explicit 3-partition
    (EFI + MSR + Primary) scheme this repo's `autounattend.xml` uses.
 
-## 5. Guest agent doesn't come up — why, and the fix
+## 6. Guest agent doesn't come up — why, and the fix
 
 After install, `virsh qemu-agent-command <vm> '{"execute":"guest-ping"}'`
 will keep failing with "QEMU guest agent is not connected", because
