@@ -162,9 +162,19 @@ virsh --connect qemu:///system list --all
 
 Get a GUI, either way:
 
-- **`virt-manager`** — the VM shows up under the `QEMU/KVM` connection
-  (`qemu:///system`); double-click it to open the display.
-- **`virt-viewer`** from a terminal:
+- **`virt-manager`** (the more likely to already be installed of the two —
+  it pulls in `libvirt` as a dependency, so if `virt-install` works, this
+  probably does too):
+  1. Launch it: `virt-manager`
+  2. In the main window, make sure you're connected to `QEMU/KVM` (the
+     `qemu:///system` connection) — it's usually the first entry and
+     connects automatically on startup.
+  3. Double-click `win-srv-2025` in the VM list to open its display. If
+     the VM isn't running yet, right-click it and choose **Run** instead
+     (this also covers the `virsh start` step above).
+- **`virt-viewer`** — a smaller, single-purpose SPICE viewer, handy if you
+  just want a one-line command instead of a full manager window. Not always
+  installed by default; on Arch/CachyOS: `sudo pacman -S virt-viewer`. Then:
   ```sh
   virt-viewer --connect qemu:///system win-srv-2025
   ```
