@@ -219,10 +219,11 @@ any of the fix below — so there's no stale cache to clear first:
    and starts the service, then disables autologon again on its own. Verify
    with `virsh qemu-agent-command <vm> '{"execute":"guest-ping"}'`.
 
-In testing for this repo this worked first try (~50 seconds after boot), no
-retries needed — likely *because* the channel device was present from before
-the first relevant boot, rather than hot-plugged onto an already-running
-guest with a cached negative driver-search result.
+On the build this repo is generalized from (same SATA/e1000e/no-TPM config,
+just a different hostname/password), this worked first try (~50 seconds
+after boot), no retries needed — likely *because* the channel device was
+present from before the first relevant boot, rather than hot-plugged onto an
+already-running guest with a cached negative driver-search result.
 
 Two more pitfalls you'll hit doing this:
 

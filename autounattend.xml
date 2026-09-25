@@ -4,11 +4,12 @@
   <!-- Proven-working answer file for a Windows Server 2025 Standard Evaluation
        (Desktop Experience) libvirt/QEMU VM. See README.md for the long, hard-won
        story of why this targets SATA disk / no-TPM / no-virtio-network instead of
-       the virtio+TPM+SMM recipe that works fine for a Windows 11 client -- that
+       the virtio+TPM+SMM recipe that works fine for a Windows 11 client; that
        combination reliably crash-looped Server 2025 Setup on the QEMU/OVMF stack
        this was built against, for reasons never fully root-caused despite
-       extensive isolation testing. This exact configuration (verified via a
-       from-scratch reinstall) completes cleanly through to the login screen. -->
+       extensive isolation testing. This disk/partition layout and pass
+       structure (verified via a from-scratch reinstall, under a different
+       hostname/password) completes cleanly through to the login screen. -->
 
   <settings pass="windowsPE">
     <component name="Microsoft-Windows-International-Core-WinPE"
@@ -32,7 +33,7 @@
         language="neutral" versionScope="nonSxS"
         xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-      <!-- Explicit 3-partition (EFI+MSR+Primary) scheme, required for a UEFI target --
+      <!-- Explicit 3-partition (EFI+MSR+Primary) scheme, required for a UEFI target.
            Setup does NOT auto-insert ESP+MSR ahead of a single CreatePartition the way
            the interactive/manual installer does. A single-partition simplification here
            silently fails ModifyPartitions (wrong PartitionID) and stalls Setup. -->
@@ -86,7 +87,7 @@
               <Key>/IMAGE/INDEX</Key>
               <!-- Index 2 = "Windows Server 2025 Standard Evaluation (Desktop Experience)".
                    Server media ships 4 editions (Standard/Datacenter x Core/Desktop
-                   Experience) -- verify the index for your ISO with:
+                   Experience); verify the index for your ISO with:
                    wimlib-imagex info install.wim -->
               <Value>2</Value>
             </MetaData>
