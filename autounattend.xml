@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+
+  <!-- Proven-working answer file for a Windows Server 2025 Standard Evaluation
+       (Desktop Experience) libvirt/QEMU VM. See README.md for the long, hard-won
+       story of why this targets SATA disk / no-TPM / no-virtio-network instead of
+       the virtio+TPM+SMM recipe that works fine for a Windows 11 client -- that
+       combination reliably crash-looped Server 2025 Setup on the QEMU/OVMF stack
+       this was built against, for reasons never fully root-caused despite
+       extensive isolation testing. This exact configuration (verified via a
+       from-scratch reinstall) completes cleanly through to the login screen. -->
+
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-International-Core-WinPE"
+        processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35"
+        language="neutral" versionScope="nonSxS"
+        xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <SetupUILanguage>
+        <UILanguage>en-US</UILanguage>
+      </SetupUILanguage>
+      <!-- Keyboard layout: en-US by default. Change to match your physical
+           keyboard (e.g. da-DK, de-DE) if you plan to type at the console. -->
+      <InputLocale>en-US</InputLocale>
+      <SystemLocale>en-US</SystemLocale>
+      <UILanguage>en-US</UILanguage>
+      <UserLocale>en-US</UserLocale>
+    </component>
+
+    <component name="Microsoft-Windows-Setup"
+        processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35"
+        language="neutral" versionScope="nonSxS"
+        xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <!-- Explicit 3-partition (EFI+MSR+Primary) scheme, required for a UEFI target --
+           Setup does NOT auto-insert ESP+MSR ahead of a single CreatePartition the way
+           the interactive/manual installer does. A single-partition simplification here
+           silently fails ModifyPartitions (wrong PartitionID) and stalls Setup. -->
+      <DiskConfiguration>
+        <Disk wcm:action="add">
+          <DiskID>0</DiskID>
+          <WillWipeDisk>true</WillWipeDisk>
+          <CreatePartitions>
+            <CreatePartition wcm:action="add">
+              <Order>1</Order>
+              <Type>EFI</Type>
+              <Size>260</Size>
+            </CreatePartition>
+            <CreatePartition wcm:action="add">
+              <Order>2</Order>
+              <Type>MSR</Type>
+              <Size>16</Size>
+            </CreatePartition>
+            <CreatePartition wcm:action="add">
+              <Order>3</Order>
+              <Type>Primary</Type>
+              <Extend>true</Extend>
+            </CreatePartition>
+          </CreatePartitions>
+          <ModifyPartitions>
+            <ModifyPartition wcm:action="add">
+              <Order>1</Order>
+              <PartitionID>1</PartitionID>
+              <Label>System</Label>
+              <Format>FAT32</Format>
+            </ModifyPartition>
+            <ModifyPartition wcm:action="add">
+              <Order>2</Order>
+              <PartitionID>2</PartitionID>
+            </ModifyPartition>
+            <ModifyPartition wcm:action="add">
+              <Order>3</Order>
+              <PartitionID>3</PartitionID>
+              <Label>Windows</Label>
+              <Format>NTFS</Format>
+              <Letter>C</Letter>
+            </ModifyPartition>
+          </ModifyPartitions>
+        </Disk>
+        <WillShowUI>OnError</WillShowUI>
+      </DiskConfiguration>
+      <ImageInstall>
+        <OSImage>
+          <InstallFrom>
+            <MetaData wcm:action="add">
+              <Key>/IMAGE/INDEX</Key>
+              <!-- Index 2 = "Windows Server 2025 Standard Evaluation (Desktop Experience)".
+                   Server media ships 4 editions (Standard/Datacenter x Core/Desktop
+                   Experience) -- verify the index for your ISO with:
+                   wimlib-imagex info install.wim -->
+              <Value>2</Value>
+            </MetaData>
+          </InstallFrom>
+          <InstallTo>
+            <DiskID>0</DiskID>
+            <PartitionID>3</PartitionID>
+          </InstallTo>
+          <WillShowUI>OnError</WillShowUI>
+        </OSImage>
+      </ImageInstall>
+      <UserData>
+        <AcceptEula>true</AcceptEula>
+      </UserData>
+    </component>
+  </settings>
+
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Shell-Setup"
+        processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35"
+        language="neutral" versionScope="nonSxS"
+        xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <ComputerName>win-srv-2025</ComputerName>
+      <!-- Timezone: UTC always works. Set to a real Windows timezone ID (e.g.
+           "Romance Standard Time" for Copenhagen/Paris/Brussels, "Pacific
+           Standard Time" for US West Coast) if you want the guest clock to
+           show local time. -->
+      <TimeZone>UTC</TimeZone>
+    </component>
+  </settings>
+
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-International-Core"
+        processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35"
+        language="neutral" versionScope="nonSxS"
+        xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <InputLocale>en-US</InputLocale>
+      <SystemLocale>en-US</SystemLocale>
+      <UILanguage>en-US</UILanguage>
+      <UserLocale>en-US</UserLocale>
+    </component>
+    <component name="Microsoft-Windows-Shell-Setup"
+        processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35"
+        language="neutral" versionScope="nonSxS"
+        xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      <UserAccounts>
+        <LocalAccounts>
+          <LocalAccount wcm:action="add">
+            <Name>admin</Name>
+            <DisplayName>admin</DisplayName>
+            <Group>Administrators</Group>
+            <Password>
+              <!-- Replace before building the ISO. Never commit a real password. -->
+              <Value>CHANGE-ME-Str0ng-Pa55w0rd!</Value>
+              <PlainText>true</PlainText>
+            </Password>
+          </LocalAccount>
+        </LocalAccounts>
+      </UserAccounts>
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+        <NetworkLocation>Work</NetworkLocation>
+        <ProtectYourPC>3</ProtectYourPC>
+        <SkipMachineOOBE>true</SkipMachineOOBE>
+        <SkipUserOOBE>true</SkipUserOOBE>
+      </OOBE>
+    </component>
+  </settings>
+
+</unattend>

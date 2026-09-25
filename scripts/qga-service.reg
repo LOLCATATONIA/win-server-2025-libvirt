@@ -1,0 +1,22 @@
+Windows Registry Editor Version 5.00
+
+; Registers the QEMU Guest Agent as a Windows service (AUTO_START, LocalSystem).
+;
+; Apply offline against the guest's SYSTEM hive with hivexregedit, e.g.:
+;   guestfish --rw -a /path/to/disk.qcow2 -i download /Windows/System32/config/SYSTEM SYSTEM.hive
+;   hivexregedit --merge --prefix '\' SYSTEM.hive qga-service.reg
+;   guestfish --rw -a /path/to/disk.qcow2 -i upload SYSTEM.hive /Windows/System32/config/SYSTEM
+;
+; Assumes qemu-ga.exe (extracted from virtio-win.iso:\guest-agent\qemu-ga-x86_64.msi
+; with `msiextract`, along with its accompanying DLLs) has already been copied to
+; "C:\Program Files\Qemu-ga\" inside the guest filesystem, and that ControlSet001 is
+; the active control set (check \Select\Current in the same hive first).
+
+[\ControlSet001\Services\QEMU-GA]
+"Type"=dword:00000010
+"Start"=dword:00000002
+"ErrorControl"=dword:00000001
+"ImagePath"="C:\\Program Files\\Qemu-ga\\qemu-ga.exe -d"
+"DisplayName"="QEMU Guest Agent"
+"ObjectName"="LocalSystem"
+"Description"="QEMU Guest Agent"

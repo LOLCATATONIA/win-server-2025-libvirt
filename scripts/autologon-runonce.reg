@@ -1,0 +1,27 @@
+Windows Registry Editor Version 5.00
+
+; TEMPORARY autologon + RunOnce trigger, applied offline against the guest's
+; SOFTWARE hive. Lets the fix-vioserial.cmd script (see this same scripts/
+; folder) run once at the next boot without anyone typing a password through
+; `virsh send-key` (fragile with non-US keyboard layouts, and unverifiable
+; since the password field is masked).
+;
+; CHANGE-ME-Str0ng-Pa55w0rd! below MUST match the local admin password you
+; actually set in autounattend.xml. Never commit a real password here.
+;
+; fix-vioserial.cmd deletes AutoAdminLogon/DefaultPassword itself as its last
+; step, so this is self-cleaning. AutoLogonCount=1 is a safety net in case
+; that cleanup step doesn't run for some reason.
+;
+; Apply the same way as qga-service.reg, but against the SOFTWARE hive:
+;   hivexregedit --merge --prefix '\' SOFTWARE.hive autologon-runonce.reg
+
+[\Microsoft\Windows NT\CurrentVersion\Winlogon]
+"AutoAdminLogon"="1"
+"DefaultUserName"="admin"
+"DefaultPassword"="CHANGE-ME-Str0ng-Pa55w0rd!"
+"DefaultDomainName"="win-srv-2025"
+"AutoLogonCount"=dword:00000001
+
+[\Microsoft\Windows\CurrentVersion\RunOnce]
+"FixVioserial"="cmd.exe /c C:\\Windows\\Setup\\fix-vioserial.cmd"
